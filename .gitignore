@@ -1,0 +1,14 @@
+# Saved authenticated pages used only for local scraper development.
+# These contain personal account data (email, session context, authorized apps)
+# and must not be committed.
+pages/
+
+# macOS
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+
+# Node / package managers (none in use but future-proof)
+node_modules/

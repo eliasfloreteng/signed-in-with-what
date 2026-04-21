@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Signed in with What?</h1>
+    </header>
+    <section id="current"></section>
+    <section id="actions">
+      <h2>Sync authorizations</h2>
+      <p class="muted">
+        Open these pages and click the sync button on the page:
+      </p>
+      <ul>
+        <li>
+          <a href="https://github.com/settings/applications" target="_blank"
+            >GitHub authorized apps</a
+          >
+          <span id="gh-meta" class="meta"></span>
+        </li>
+        <li>
+          <a href="https://myaccount.google.com/connections" target="_blank"
+            >Google connections</a
+          >
+          <span id="go-meta" class="meta"></span>
+        </li>
+      </ul>
+      <button id="clear" class="danger">Clear stored data</button>
+    </section>
+    <section id="debug">
+      <h2>
+        Detected apps
+        <button id="toggle-debug" class="linkbtn">show</button>
+      </h2>
+      <div id="debug-body" hidden></div>
+    </section>
+    <script src="popup.js"></script>
+  </body>
+</html>
