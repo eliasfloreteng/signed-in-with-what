@@ -33,12 +33,12 @@
   "content_scripts": [
     {
       "matches": ["https://github.com/settings/applications*"],
-      "js": ["scrapers/github.js"],
+      "js": ["scrapers/ui.js", "scrapers/github.js"],
       "run_at": "document_idle"
     },
     {
       "matches": ["https://myaccount.google.com/connections*"],
-      "js": ["scrapers/google.js"],
+      "js": ["scrapers/ui.js", "scrapers/google.js"],
       "run_at": "document_idle"
     }
   ]

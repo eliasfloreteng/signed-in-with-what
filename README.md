@@ -5,19 +5,21 @@ site via "Sign in with GitHub" or "Sign in with Google".
 
 ## How it works
 
-Those provider pages require authentication and can't be scraped headlessly. The
-extension uses a manual-sync model:
+Those provider pages require authentication and can't be scraped headlessly, so
+the extension uses a manual-sync model:
 
-1. Open `https://github.com/settings/applications` — click the green **Sync to
-   'Signed in with What?'** button that appears in the bottom-right.
-2. Open `https://myaccount.google.com/connections` — click the blue sync button.
+1. Click the toolbar icon for onboarding. It offers one-click buttons that open
+   `https://github.com/settings/applications` and
+   `https://myaccount.google.com/connections`.
+2. On the first visit, a dismissable card appears with a **Sync now** button.
+   After one successful sync the card is replaced by a small re-sync pill in
+   the corner that can be hidden.
+3. The scraper reads the authorized apps, resolves each app's homepage, and
+   stores the list in `browser.storage.local`.
 
-The content scripts read the list of authorized apps from the DOM, extract each
-app's homepage hostname, and store the list in `browser.storage.local`.
-
-Whenever you browse, the background script matches the current tab's hostname
+While you browse, the background script matches the current tab's hostname
 against the stored list and sets a toolbar badge (`GH`, `G`, or a count). Click
-the toolbar icon to see which provider(s) and which app entries matched.
+the toolbar icon to see which provider(s) and which app(s) matched.
 
 ## Install (temporary, for development)
 
@@ -31,9 +33,10 @@ The extension stays loaded until Firefox restarts.
 
 - `manifest.json` — MV3 manifest
 - `background.js` — badge + matching logic, storage, messaging
+- `scrapers/ui.js` — shared shadow-DOM overlay/pill rendered on provider pages
 - `scrapers/github.js` — content script for GitHub authorized apps
 - `scrapers/google.js` — content script for Google connections
-- `popup.html` / `popup.js` / `popup.css` — toolbar popup
+- `popup.html` / `popup.js` / `popup.css` — toolbar popup (onboarding + status)
 - `icons/` — toolbar icons
 
 ## Limitations

@@ -1,7 +1,11 @@
 const PROVIDER_LABEL = { github: "GitHub", google: "Google" };
+const PROVIDER_URL = {
+  github: "https://github.com/settings/applications",
+  google: "https://myaccount.google.com/connections",
+};
 
 function formatAge(ts) {
-  if (!ts) return "not synced";
+  if (!ts) return "not synced yet";
   const diff = Date.now() - ts;
   const mins = Math.round(diff / 60000);
   if (mins < 1) return "just now";
@@ -26,21 +30,52 @@ function escapeHtml(s) {
   );
 }
 
-async function renderCurrent() {
-  const el = document.getElementById("current");
+async function openOrFocusProvider(provider) {
+  const url = PROVIDER_URL[provider];
+  if (!url) return;
+  // Try to find an existing tab already on the provider's page
+  const tabs = await browser.tabs.query({ url: url + "*" });
+  if (tabs.length) {
+    await browser.tabs.update(tabs[0].id, { active: true });
+    if (tabs[0].windowId != null) {
+      await browser.windows.update(tabs[0].windowId, { focused: true });
+    }
+  } else {
+    await browser.tabs.create({ url });
+  }
+  window.close();
+}
+
+function wireProviderButtons() {
+  document.querySelectorAll("[data-open]").forEach((el) => {
+    el.addEventListener("click", () => openOrFocusProvider(el.dataset.open));
+  });
+}
+
+async function renderCurrent(currentSection) {
   const { url, matches } = await browser.runtime.sendMessage({
     type: "query-current",
   });
   if (!url) {
-    el.innerHTML = `<p class="empty">No active tab.</p>`;
+    currentSection.hidden = true;
     return;
   }
   let host = "";
   try {
     host = new URL(url).hostname;
-  } catch {}
+  } catch {
+    /* noop */
+  }
+  if (!host) {
+    currentSection.hidden = true;
+    return;
+  }
+  currentSection.hidden = false;
   if (!matches.length) {
-    el.innerHTML = `<div class="site">${escapeHtml(host)}</div><p class="empty">No known Sign-in authorization for this site.</p>`;
+    currentSection.innerHTML = `
+      <div class="site">${escapeHtml(host)}</div>
+      <p class="empty">No known Sign-in authorization for this site.</p>
+    `;
     return;
   }
   const rows = matches
@@ -52,18 +87,16 @@ async function renderCurrent() {
       </div>`
     )
     .join("");
-  el.innerHTML = `<div class="site">${escapeHtml(host)}</div>${rows}`;
+  currentSection.innerHTML = `<div class="site">${escapeHtml(host)}</div>${rows}`;
 }
 
-async function renderMeta() {
-  const all = await browser.runtime.sendMessage({ type: "get-all" });
-  const gh = all["github"] || [];
-  const go = all["google"] || [];
+function renderProviderMeta(all) {
+  const gh = Array.isArray(all["github"]) ? all["github"] : [];
+  const go = Array.isArray(all["google"]) ? all["google"] : [];
   document.getElementById("gh-meta").textContent =
     `${gh.length} apps · ${formatAge(all["github:updatedAt"])}`;
   document.getElementById("go-meta").textContent =
     `${go.length} apps · ${formatAge(all["google:updatedAt"])}`;
-  return all;
 }
 
 function renderProviderApps(container, provider, entries) {
@@ -94,7 +127,7 @@ function renderProviderApps(container, provider, entries) {
   container.appendChild(group);
 }
 
-async function renderDebug(all) {
+function renderDebug(all) {
   const body = document.getElementById("debug-body");
   body.innerHTML = "";
   const providers = ["github", "google"];
@@ -105,15 +138,44 @@ async function renderDebug(all) {
     renderProviderApps(body, p, entries);
   }
   if (total === 0) {
-    body.innerHTML = `<p class="empty">No apps stored yet. Sync from GitHub / Google first.</p>`;
+    body.innerHTML = `<p class="empty">Nothing synced yet.</p>`;
   }
+}
+
+function show(id, visible = true) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (visible) el.removeAttribute("hidden");
+  else el.setAttribute("hidden", "");
+}
+
+async function render() {
+  const all = await browser.runtime.sendMessage({ type: "get-all" });
+  const hasAny =
+    Boolean(all["github:updatedAt"]) || Boolean(all["google:updatedAt"]);
+
+  if (!hasAny) {
+    show("onboarding", true);
+    show("current", false);
+    show("actions", false);
+    show("debug", false);
+    show("footer", false);
+    return;
+  }
+
+  show("onboarding", false);
+  show("actions", true);
+  show("debug", true);
+  show("footer", true);
+
+  renderProviderMeta(all);
+  renderDebug(all);
+  await renderCurrent(document.getElementById("current"));
 }
 
 document.getElementById("clear").addEventListener("click", async () => {
   await browser.runtime.sendMessage({ type: "clear" });
-  const all = await renderMeta();
-  renderCurrent();
-  renderDebug(all);
+  render();
 });
 
 document.getElementById("toggle-debug").addEventListener("click", (e) => {
@@ -124,8 +186,5 @@ document.getElementById("toggle-debug").addEventListener("click", (e) => {
   e.target.textContent = hidden ? "hide" : "show";
 });
 
-(async () => {
-  renderCurrent();
-  const all = await renderMeta();
-  renderDebug(all);
-})();
+wireProviderButtons();
+render();

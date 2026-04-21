@@ -1,20 +1,24 @@
 :root {
   color-scheme: light dark;
-  --fg: #1a1a1a;
-  --muted: #666;
-  --bg: #fff;
-  --border: #e1e4e8;
+  --fg: #1f2328;
+  --muted: #57606a;
+  --bg: #ffffff;
+  --bg-alt: #f6f8fa;
+  --border: #d0d7de;
   --accent: #1f6feb;
   --github: #24292f;
   --google: #1a73e8;
   --danger: #cf222e;
+  --shadow: 0 1px 2px rgba(27, 31, 36, 0.04);
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --fg: #e6edf3;
     --muted: #8b949e;
     --bg: #0d1117;
+    --bg-alt: #161b22;
     --border: #30363d;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
   }
 }
 * {
@@ -26,7 +30,7 @@ body {
   padding: 0;
 }
 body {
-  width: 320px;
+  width: 340px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
     sans-serif;
   font-size: 13px;
@@ -34,53 +38,185 @@ body {
   background: var(--bg);
 }
 header {
-  padding: 12px 14px 8px;
+  padding: 14px 16px 10px;
   border-bottom: 1px solid var(--border);
 }
 h1 {
   margin: 0;
   font-size: 14px;
   font-weight: 600;
+  letter-spacing: -0.005em;
 }
 h2 {
-  margin: 0 0 6px;
-  font-size: 12px;
+  margin: 0 0 8px;
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   color: var(--muted);
 }
 section {
-  padding: 12px 14px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--border);
 }
-section:last-child {
+section:last-of-type {
   border-bottom: none;
 }
-.muted {
-  color: var(--muted);
-  margin: 0 0 8px;
+footer {
+  padding: 10px 16px 14px;
+  display: flex;
+  justify-content: center;
 }
+.muted,
+.meta {
+  color: var(--muted);
+}
+.lead {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--fg);
+}
+.fineprint {
+  margin: 10px 0 0;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+}
+.steps {
+  margin: 0 0 14px;
+  padding: 0 0 0 18px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+.steps li {
+  padding: 2px 0;
+}
+.steps li strong {
+  color: var(--fg);
+}
+
+/* Onboarding provider buttons */
+.provider-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.provider-btn {
+  font: inherit;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms, transform 80ms;
+  box-shadow: var(--shadow);
+}
+.provider-btn:hover {
+  background: var(--bg-alt);
+  border-color: var(--fg);
+}
+.provider-btn:active {
+  transform: translateY(1px);
+}
+.provider-btn .logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  flex: 0 0 auto;
+}
+.provider-btn.github .logo {
+  background: var(--github);
+}
+.provider-btn.google .logo {
+  background: var(--google);
+}
+.provider-btn .text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.provider-btn .text strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+.provider-btn .text .sub {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Provider list (once synced) */
+.provider-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.provider-list li {
+  display: block;
+}
+.provider-row {
+  font: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms;
+}
+.provider-row:hover {
+  background: var(--bg-alt);
+  border-color: var(--fg);
+}
+
+/* Current site match card */
 .site {
   font-weight: 600;
   word-break: break-all;
+  margin-bottom: 8px;
 }
 .match {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-top: 6px;
-  padding: 6px 8px;
+  padding: 8px 10px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 8px;
+  background: var(--bg-alt);
 }
 .badge {
   display: inline-block;
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
   color: #fff;
   font-size: 11px;
   font-weight: 600;
+  letter-spacing: 0.02em;
 }
 .badge.github {
   background: var(--github);
@@ -91,61 +227,33 @@ section:last-child {
 .empty {
   color: var(--muted);
   font-style: italic;
+  margin: 0;
 }
-ul {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 8px;
-}
-li {
-  padding: 4px 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-}
-a {
-  color: var(--accent);
-  text-decoration: none;
-}
-a:hover {
-  text-decoration: underline;
-}
-.meta {
-  color: var(--muted);
-  font-size: 11px;
-}
+
+/* Buttons */
 button {
   font: inherit;
-  padding: 6px 10px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--fg);
   cursor: pointer;
 }
 button.danger {
   color: var(--danger);
-  border-color: var(--danger);
-}
-button.danger:hover {
-  background: var(--danger);
-  color: #fff;
 }
 button.linkbtn {
-  font-size: 11px;
-  padding: 2px 6px;
-  margin-left: 6px;
-  color: var(--accent);
-  border: none;
   background: transparent;
-  text-transform: none;
-  letter-spacing: 0;
-  cursor: pointer;
+  border: none;
+  padding: 4px 6px;
+  color: var(--accent);
+  font-size: 12px;
 }
 button.linkbtn:hover {
   text-decoration: underline;
 }
+footer button.linkbtn {
+  color: var(--danger);
+  font-size: 11px;
+}
+
+/* Debug list */
 .provider-group {
   margin-top: 8px;
 }
@@ -163,11 +271,11 @@ button.linkbtn:hover {
   max-height: 260px;
   overflow-y: auto;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 8px;
 }
 .app-list li {
   display: block;
-  padding: 4px 8px;
+  padding: 5px 10px;
   border-bottom: 1px solid var(--border);
   font-size: 12px;
 }

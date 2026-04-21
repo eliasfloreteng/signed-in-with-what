@@ -112,7 +112,11 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
     return all;
   }
   if (msg?.type === "clear") {
-    await browser.storage.local.remove("authorizations");
+    await browser.storage.local.remove([
+      "authorizations",
+      "overlay-dismissed:github",
+      "overlay-dismissed:google",
+    ]);
     const tabs = await browser.tabs.query({});
     for (const t of tabs) if (t.id != null && t.url) updateBadgeForTab(t.id, t.url);
     return { ok: true };

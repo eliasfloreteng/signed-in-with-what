@@ -146,62 +146,34 @@
     return entries;
   }
 
-  function setStatus(btn, text, color) {
-    btn.textContent = text;
-    if (color) btn.style.background = color;
-  }
-
-  function createButton() {
-    if (document.getElementById("__siww_btn")) return;
-    const btn = document.createElement("button");
-    btn.id = "__siww_btn";
-    btn.type = "button";
-    btn.textContent = "Sync to 'Signed in with What?'";
-    Object.assign(btn.style, {
-      position: "fixed",
-      bottom: "16px",
-      right: "16px",
-      zIndex: 99999,
-      padding: "10px 14px",
-      background: "#1a73e8",
-      color: "white",
-      border: "none",
-      borderRadius: "8px",
-      fontFamily: "system-ui, sans-serif",
-      fontSize: "13px",
-      cursor: "pointer",
-      boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+  async function runSync(setStatus) {
+    setStatus("Reading your connections…");
+    let entries = [];
+    for (let i = 0; i < 10; i++) {
+      entries = scrape();
+      if (entries.length) break;
+      await new Promise((r) => setTimeout(r, 500));
+    }
+    if (!entries.length) {
+      return { error: "Couldn't find your connections on this page. Try scrolling and retry." };
+    }
+    const res = await browser.runtime.sendMessage({
+      type: "scraped-authorizations",
+      provider: "google",
+      entries,
     });
-    btn.addEventListener("click", async () => {
-      btn.disabled = true;
-      let entries = [];
-      for (let i = 0; i < 10; i++) {
-        entries = scrape();
-        if (entries.length) break;
-        await new Promise((r) => setTimeout(r, 500));
-      }
-      if (!entries.length) {
-        setStatus(btn, "No apps found on page", "#d93025");
-        btn.disabled = false;
-        return;
-      }
-      const res = await browser.runtime.sendMessage({
-        type: "scraped-authorizations",
-        provider: "google",
-        entries,
-      });
-      const hosts = entries.filter((e) => e.host).length;
-      setStatus(
-        btn,
-        `Synced ${res?.count ?? entries.length} apps (${hosts} with URL)`,
-        "#188038"
-      );
-      btn.disabled = false;
-    });
-    document.body.appendChild(btn);
+    const withUrl = entries.filter((e) => e.host).length;
+    return { count: res?.count ?? entries.length, withUrl };
   }
 
   if (/^\/connections\/?$/.test(location.pathname)) {
-    createButton();
+    const tryMount = () => {
+      if (window.__siwwUi) {
+        window.__siwwUi.mount("google", { onSync: runSync });
+      } else {
+        setTimeout(tryMount, 50);
+      }
+    };
+    tryMount();
   }
 })();
