@@ -191,6 +191,26 @@
 
   const DISMISS_KEY_PREFIX = "overlay-dismissed:";
 
+  function h(tag, attrs = {}, children = []) {
+    const node = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (v == null || v === false) continue;
+      if (k === "class") node.className = v;
+      else if (k === "text") node.textContent = v;
+      else if (k === "style") Object.assign(node.style, v);
+      else if (k.startsWith("data-") || k.startsWith("aria-") || k === "role" || k === "id" || k === "title" || k === "tabindex") {
+        node.setAttribute(k, v);
+      } else {
+        node.setAttribute(k, v);
+      }
+    }
+    for (const c of [].concat(children)) {
+      if (c == null) continue;
+      node.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+    }
+    return node;
+  }
+
   async function hasEverSynced(provider) {
     try {
       const { authorizations = {} } = await browser.storage.local.get("authorizations");
@@ -246,39 +266,58 @@
 
     function renderOverlay() {
       currentView = "overlay";
-      root.innerHTML = `
-        <div class="overlay" part="overlay">
-          <div class="card" role="dialog" aria-labelledby="siww-title">
-            <span class="badge" style="background:${theme.badgeBg}">
-              <span class="badge-dot"></span> Signed in with What?
-            </span>
-            <h2 id="siww-title">Import your ${theme.label} sign-ins</h2>
-            <p>Scan the apps you've authorized with "Sign in with ${theme.label}" so the extension can flag them when you browse.</p>
-            <ul class="bullets">
-              <li>Reads the list already shown on this page.</li>
-              <li>Stores app names and domains locally in your browser.</li>
-              <li>Nothing is sent anywhere — no servers, no tracking.</li>
-            </ul>
-            <div class="actions">
-              <div class="status" data-role="status"></div>
-              <button class="linklike" data-action="dismiss">Not now</button>
-              <button class="primary" data-action="sync">Sync now</button>
-            </div>
-          </div>
-        </div>
-      `;
+      root.replaceChildren(
+        h("div", { class: "overlay", part: "overlay" }, [
+          h("div", { class: "card", role: "dialog", "aria-labelledby": "siww-title" }, [
+            h("span", { class: "badge", style: { background: theme.badgeBg } }, [
+              h("span", { class: "badge-dot" }),
+              " Signed in with What?",
+            ]),
+            h("h2", { id: "siww-title", text: `Import your ${theme.label} sign-ins` }),
+            h("p", {
+              text: `Scan the apps you've authorized with "Sign in with ${theme.label}" so the extension can flag them when you browse.`,
+            }),
+            h("ul", { class: "bullets" }, [
+              h("li", { text: "Reads the list already shown on this page." }),
+              h("li", { text: "Stores app names and domains locally in your browser." }),
+              h("li", { text: "Nothing is sent anywhere — no servers, no tracking." }),
+            ]),
+            h("div", { class: "actions" }, [
+              h("div", { class: "status", "data-role": "status" }),
+              h("button", { class: "linklike", "data-action": "dismiss", text: "Not now" }),
+              h("button", { class: "primary", "data-action": "sync", text: "Sync now" }),
+            ]),
+          ]),
+        ])
+      );
       wireButtons();
     }
 
     function renderPill() {
       currentView = "pill";
-      root.innerHTML = `
-        <div class="pill" role="button" tabindex="0" data-action="sync" title="Re-sync your ${theme.label} authorizations">
-          <span class="dot"></span>
-          <span>Re-sync ${theme.label}</span>
-          <button class="close" data-action="dismiss" title="Hide" aria-label="Hide">×</button>
-        </div>
-      `;
+      root.replaceChildren(
+        h(
+          "div",
+          {
+            class: "pill",
+            role: "button",
+            tabindex: "0",
+            "data-action": "sync",
+            title: `Re-sync your ${theme.label} authorizations`,
+          },
+          [
+            h("span", { class: "dot" }),
+            h("span", { text: `Re-sync ${theme.label}` }),
+            h("button", {
+              class: "close",
+              "data-action": "dismiss",
+              title: "Hide",
+              "aria-label": "Hide",
+              text: "×",
+            }),
+          ]
+        )
+      );
       wireButtons();
     }
 

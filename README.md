@@ -3,6 +3,8 @@
 Firefox extension that tells you whether you've previously authorized the current
 site via "Sign in with GitHub" or "Sign in with Google".
 
+![Popup showing a GitHub match on notion.so](screenshots/popup-match.png)
+
 ## How it works
 
 Those provider pages require authentication and can't be scraped headlessly, so
@@ -48,3 +50,11 @@ The extension stays loaded until Firefox restarts.
   actually log in to won't match. You can extend stored entries in
   `browser.storage.local` manually if needed.
 - Only GitHub and Google providers are supported initially.
+
+## Privacy
+
+Nothing leaves your browser. See [PRIVACY.md](PRIVACY.md).
+
+## License
+
+MIT — see [LICENSE](LICENSE).

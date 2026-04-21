@@ -16,18 +16,19 @@ function formatAge(ts) {
   return `${days}d ago`;
 }
 
-function escapeHtml(s) {
-  return String(s).replace(
-    /[&<>"']/g,
-    (c) =>
-      ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;",
-      })[c]
-  );
+function el(tag, attrs = {}, children = []) {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v == null || v === false) continue;
+    if (k === "class") node.className = v;
+    else if (k === "text") node.textContent = v;
+    else node.setAttribute(k, v);
+  }
+  for (const c of [].concat(children)) {
+    if (c == null) continue;
+    node.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+  }
+  return node;
 }
 
 async function openOrFocusProvider(provider) {
@@ -71,23 +72,25 @@ async function renderCurrent(currentSection) {
     return;
   }
   currentSection.hidden = false;
+  currentSection.replaceChildren();
+  currentSection.appendChild(el("div", { class: "site", text: host }));
   if (!matches.length) {
-    currentSection.innerHTML = `
-      <div class="site">${escapeHtml(host)}</div>
-      <p class="empty">No known Sign-in authorization for this site.</p>
-    `;
+    currentSection.appendChild(
+      el("p", { class: "empty", text: "No known Sign-in authorization for this site." })
+    );
     return;
   }
-  const rows = matches
-    .map(
-      (m) => `
-      <div class="match">
-        <span class="badge ${m.provider}">${PROVIDER_LABEL[m.provider]}</span>
-        <span>${escapeHtml(m.name || m.host)}</span>
-      </div>`
-    )
-    .join("");
-  currentSection.innerHTML = `<div class="site">${escapeHtml(host)}</div>${rows}`;
+  for (const m of matches) {
+    currentSection.appendChild(
+      el("div", { class: "match" }, [
+        el("span", {
+          class: `badge ${m.provider}`,
+          text: PROVIDER_LABEL[m.provider],
+        }),
+        el("span", { text: m.name || m.host }),
+      ])
+    );
+  }
 }
 
 function renderProviderMeta(all) {
@@ -101,26 +104,28 @@ function renderProviderMeta(all) {
 
 function renderProviderApps(container, provider, entries) {
   if (!entries.length) return;
-  const group = document.createElement("div");
-  group.className = "provider-group";
   const hosts = entries.filter((e) => e.host).length;
-  group.innerHTML = `
-    <h3><span class="badge ${provider}">${PROVIDER_LABEL[provider]}</span>
-    <span class="meta">${entries.length} apps · ${hosts} with URL</span></h3>
-  `;
-  const ul = document.createElement("ul");
-  ul.className = "app-list";
+  const group = el("div", { class: "provider-group" }, [
+    el("h3", {}, [
+      el("span", { class: `badge ${provider}`, text: PROVIDER_LABEL[provider] }),
+      " ",
+      el("span", {
+        class: "meta",
+        text: `${entries.length} apps · ${hosts} with URL`,
+      }),
+    ]),
+  ]);
+  const ul = el("ul", { class: "app-list" });
   const sorted = [...entries].sort((a, b) =>
     (a.name || "").localeCompare(b.name || "")
   );
   for (const e of sorted) {
-    const li = document.createElement("li");
-    const name = escapeHtml(e.name || "(unnamed)");
-    if (e.host) {
-      li.innerHTML = `<strong>${name}</strong><span class="host">${escapeHtml(e.host)}</span>`;
-    } else {
-      li.innerHTML = `<strong>${name}</strong><span class="host no-url">no URL</span>`;
-    }
+    const li = el("li", {}, [
+      el("strong", { text: e.name || "(unnamed)" }),
+      e.host
+        ? el("span", { class: "host", text: e.host })
+        : el("span", { class: "host no-url", text: "no URL" }),
+    ]);
     ul.appendChild(li);
   }
   group.appendChild(ul);
@@ -129,7 +134,7 @@ function renderProviderApps(container, provider, entries) {
 
 function renderDebug(all) {
   const body = document.getElementById("debug-body");
-  body.innerHTML = "";
+  body.replaceChildren();
   const providers = ["github", "google"];
   let total = 0;
   for (const p of providers) {
@@ -138,7 +143,7 @@ function renderDebug(all) {
     renderProviderApps(body, p, entries);
   }
   if (total === 0) {
-    body.innerHTML = `<p class="empty">Nothing synced yet.</p>`;
+    body.appendChild(el("p", { class: "empty", text: "Nothing synced yet." }));
   }
 }
 

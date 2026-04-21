@@ -12,3 +12,6 @@ pages/
 
 # Node / package managers (none in use but future-proof)
 node_modules/
+
+# web-ext build output
+web-ext-artifacts/

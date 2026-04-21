@@ -5,8 +5,11 @@
   "description": "Shows if the current page has been authorized via Sign in with GitHub or Google.",
   "browser_specific_settings": {
     "gecko": {
-      "id": "signed-in-with-what@elias.local",
-      "strict_min_version": "115.0"
+      "id": "@signed-in-with",
+      "strict_min_version": "142.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
     }
   },
   "permissions": ["storage", "tabs", "activeTab"],

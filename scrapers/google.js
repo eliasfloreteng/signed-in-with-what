@@ -46,16 +46,9 @@
       const m = text.match(/AF_initDataCallback\(\{[^]*?data:\s*(\[[\s\S]*?\])\s*,\s*sideChannel/);
       if (!m) continue;
       try {
-        // The blob is a JS array literal (may contain \x.. escapes). Using JSON.parse
-        // is safer than eval; Google emits double-quoted JSON-compatible output.
         return JSON.parse(m[1]);
       } catch {
-        // Fall back to Function eval as a last resort (same-origin trusted code)
-        try {
-          return Function('"use strict";return (' + m[1] + ")")();
-        } catch {
-          /* ignore */
-        }
+        /* malformed blob — skip */
       }
     }
     return null;
