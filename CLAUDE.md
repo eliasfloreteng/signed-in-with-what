@@ -4,9 +4,10 @@ Project-local notes for working on this Firefox extension.
 
 ## What this is
 
-MV3 Firefox extension. On the two provider pages (`github.com/settings/applications`
-and `myaccount.google.com/connections`) a shadow-DOM overlay invites the user to
-**Sync now**. The content script scrapes the authorized-apps list already
+MV3 Firefox extension. On the provider pages
+(`github.com/settings/applications`, `github.com/settings/apps/authorizations`,
+and `myaccount.google.com/connections`) a shadow-DOM overlay invites the user
+to **Sync now**. The content script scrapes the authorized-apps list already
 rendered on that page, resolves each app's homepage URL, and stores everything
 in `browser.storage.local`. While browsing, `background.js` matches the current
 tab's hostname against that stored list and updates the toolbar badge.
@@ -23,7 +24,8 @@ Everything runs locally. No network traffic beyond the provider's own pages.
 - `scrapers/ui.js` — **shared** shadow-DOM overlay + corner pill. Exposes
   `window.__siwwUi.mount(provider, {onSync})`. Loaded before each provider's
   scraper (order matters — see `content_scripts` in `manifest.json`).
-- `scrapers/github.js` — scrapes `div[id^='oauth-authorization-']`,
+- `scrapers/github.js` — scrapes `div[id^='oauth-authorization-']` from both
+  GitHub pages (`/settings/applications` and `/settings/apps/authorizations`),
   follows pagination via `.pagination em.current[data-total-pages]`, then
   fetches each app's detail page to read `a.Link--inTextBlock[href^='http']`.
 - `scrapers/google.js` — parses the inline `AF_initDataCallback({key:'ds:0',…})`
@@ -89,6 +91,10 @@ resets the `overlay-dismissed:*` flags so the onboarding overlay reappears.
   `extractInitData` regex and the `findAppTuples` shape predicate.
 - **GitHub pagination.** Missing `em.current[data-total-pages]` means
   single-page; `getTotalPages` should return `1` in that case, not `NaN`.
+- **GitHub has two lists.** Keep both `/settings/applications` and
+  `/settings/apps/authorizations` wired in `manifest.json` and
+  `scrapers/github.js`, otherwise the sync only imports part of the account's
+  authorizations.
 - **Hostname matching.** `background.js > hostMatches` uses equality or
   `endsWith "." + other`. Adding a third mode (e.g. suffix list) means
   touching both that function and the popup's "matches" rendering.

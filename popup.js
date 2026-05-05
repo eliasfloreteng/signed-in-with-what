@@ -1,7 +1,10 @@
 const PROVIDER_LABEL = { github: "GitHub", google: "Google" };
-const PROVIDER_URL = {
-  github: "https://github.com/settings/applications",
-  google: "https://myaccount.google.com/connections",
+const PROVIDER_URLS = {
+  github: [
+    "https://github.com/settings/apps/authorizations",
+    "https://github.com/settings/applications",
+  ],
+  google: ["https://myaccount.google.com/connections"],
 };
 
 function formatAge(ts) {
@@ -32,18 +35,23 @@ function el(tag, attrs = {}, children = []) {
 }
 
 async function openOrFocusProvider(provider) {
-  const url = PROVIDER_URL[provider];
-  if (!url) return;
-  // Try to find an existing tab already on the provider's page
-  const tabs = await browser.tabs.query({ url: url + "*" });
-  if (tabs.length) {
-    await browser.tabs.update(tabs[0].id, { active: true });
-    if (tabs[0].windowId != null) {
-      await browser.windows.update(tabs[0].windowId, { focused: true });
+  const urls = PROVIDER_URLS[provider];
+  if (!Array.isArray(urls) || !urls.length) return;
+
+  // Try to find an existing tab already on one of the provider's sync pages.
+  for (const url of urls) {
+    const tabs = await browser.tabs.query({ url: url + "*" });
+    if (tabs.length) {
+      await browser.tabs.update(tabs[0].id, { active: true });
+      if (tabs[0].windowId != null) {
+        await browser.windows.update(tabs[0].windowId, { focused: true });
+      }
+      window.close();
+      return;
     }
-  } else {
-    await browser.tabs.create({ url });
   }
+
+  await browser.tabs.create({ url: urls[0] });
   window.close();
 }
 

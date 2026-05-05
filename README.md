@@ -11,13 +11,15 @@ Those provider pages require authentication and can't be scraped headlessly, so
 the extension uses a manual-sync model:
 
 1. Click the toolbar icon for onboarding. It offers one-click buttons that open
-   `https://github.com/settings/applications` and
+   `https://github.com/settings/apps/authorizations` and
    `https://myaccount.google.com/connections`.
 2. On the first visit, a dismissable card appears with a **Sync now** button.
    After one successful sync the card is replaced by a small re-sync pill in
    the corner that can be hidden.
-3. The scraper reads the authorized apps, resolves each app's homepage, and
-   stores the list in `browser.storage.local`.
+3. GitHub sync reads both **Authorized GitHub Apps**
+   (`/settings/apps/authorizations`) and **Authorized OAuth Apps**
+   (`/settings/applications`), resolves each app's homepage, and stores the
+   list in `browser.storage.local`.
 
 While you browse, the background script matches the current tab's hostname
 against the stored list and sets a toolbar badge (`GH`, `G`, or a count). Click
@@ -36,7 +38,7 @@ The extension stays loaded until Firefox restarts.
 - `manifest.json` — MV3 manifest
 - `background.js` — badge + matching logic, storage, messaging
 - `scrapers/ui.js` — shared shadow-DOM overlay/pill rendered on provider pages
-- `scrapers/github.js` — content script for GitHub authorized apps
+- `scrapers/github.js` — content script for GitHub Apps + OAuth app authorizations
 - `scrapers/google.js` — content script for Google connections
 - `popup.html` / `popup.js` / `popup.css` — toolbar popup (onboarding + status)
 - `icons/` — toolbar icons

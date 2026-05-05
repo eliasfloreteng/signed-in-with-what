@@ -1,4 +1,30 @@
 (function () {
+  const GITHUB_SOURCES = [
+    {
+      key: "oauth",
+      path: "/settings/applications",
+      label: "OAuth apps",
+    },
+    {
+      key: "github-apps",
+      path: "/settings/apps/authorizations",
+      label: "GitHub Apps",
+    },
+  ];
+
+  function normalizePath(path) {
+    return path.replace(/\/+$/, "") || "/";
+  }
+
+  function currentPageNumber() {
+    try {
+      const p = parseInt(new URL(location.href).searchParams.get("page"), 10);
+      return Number.isFinite(p) && p > 0 ? p : 1;
+    } catch {
+      return 1;
+    }
+  }
+
   function cleanHost(u) {
     try {
       return new URL(u).hostname.replace(/^www\./, "").toLowerCase();
@@ -11,7 +37,25 @@
     return h === "github.com" || h.endsWith(".github.com") || h === "githubusercontent.com" || h.endsWith(".githubusercontent.com");
   }
 
-  // Scrape the list of apps from a single /settings/applications page
+  function buildPageUrl(path, page) {
+    const u = new URL(path, location.origin);
+    if (page > 1) u.searchParams.set("page", String(page));
+    return u.href;
+  }
+
+  function dedupeApps(apps) {
+    const seen = new Set();
+    const out = [];
+    for (const app of apps) {
+      const key = `${app.source || ""}|${app.id || ""}|${app.detailUrl || ""}|${app.name || ""}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(app);
+    }
+    return out;
+  }
+
+  // Scrape the list of apps from a single GitHub authorization page.
   function scrapeListFromDoc(doc) {
     const items = doc.querySelectorAll("div[id^='oauth-authorization-']");
     const apps = [];
@@ -45,32 +89,38 @@
     return new DOMParser().parseFromString(html, "text/html");
   }
 
-  async function collectAllApps(onProgress) {
-    const first = scrapeListFromDoc(document);
-    const totalPages = getTotalPages(document);
+  async function collectAppsForSource(source, onProgress) {
+    const onSourcePage = normalizePath(location.pathname) === normalizePath(source.path);
+    const currentPage = onSourcePage ? currentPageNumber() : 1;
+
+    const firstDoc =
+      onSourcePage && currentPage === 1
+        ? document
+        : await fetchDoc(buildPageUrl(source.path, 1));
+    const first = scrapeListFromDoc(firstDoc).map((app) => ({ ...app, source: source.key }));
+    const totalPages = getTotalPages(firstDoc);
+
     if (totalPages <= 1) return first;
+
     onProgress?.(`Reading ${totalPages} pages…`);
-    const base = location.origin + location.pathname;
-    const urls = [];
-    for (let p = 2; p <= totalPages; p++) urls.push(`${base}?page=${p}`);
+    const pages = [];
+    for (let p = 2; p <= totalPages; p++) pages.push(p);
+
     const results = await Promise.all(
-      urls.map(async (u) => {
+      pages.map(async (p) => {
         try {
-          return scrapeListFromDoc(await fetchDoc(u));
+          const doc =
+            onSourcePage && currentPage === p
+              ? document
+              : await fetchDoc(buildPageUrl(source.path, p));
+          return scrapeListFromDoc(doc).map((app) => ({ ...app, source: source.key }));
         } catch {
           return [];
         }
       })
     );
-    const all = [first, ...results].flat();
-    const seen = new Set();
-    const out = [];
-    for (const a of all) {
-      if (seen.has(a.id)) continue;
-      seen.add(a.id);
-      out.push(a);
-    }
-    return out;
+
+    return dedupeApps([first, ...results].flat());
   }
 
   async function fetchHomepageFor(app) {
@@ -106,10 +156,34 @@
   }
 
   async function runSync(setStatus) {
-    setStatus("Scanning apps list…");
-    const apps = await collectAllApps(setStatus);
+    const sources = [...GITHUB_SOURCES];
+    const currentPath = normalizePath(location.pathname);
+    sources.sort((a, b) => {
+      const aCurrent = normalizePath(a.path) === currentPath ? 0 : 1;
+      const bCurrent = normalizePath(b.path) === currentPath ? 0 : 1;
+      return aCurrent - bCurrent;
+    });
+
+    const scraped = [];
+    for (const source of sources) {
+      setStatus(`Scanning ${source.label}…`);
+      try {
+        const apps = await collectAppsForSource(
+          source,
+          (msg) => setStatus(`${source.label}: ${msg}`)
+        );
+        scraped.push(...apps);
+      } catch {
+        // Ignore failures from one page and continue with the other source.
+      }
+    }
+
+    const apps = dedupeApps(scraped);
     if (!apps.length) {
-      return { error: "No authorized apps found on this page." };
+      return {
+        error:
+          "No authorized GitHub apps found on settings/applications or settings/apps/authorizations.",
+      };
     }
     setStatus(`Fetching homepages for ${apps.length} apps…`);
 
@@ -127,6 +201,7 @@
           host: home?.host || null,
           url: home?.url || null,
           detailUrl: app.detailUrl,
+          source: app.source,
         });
         setStatus(`Loading apps: ${entries.length}/${apps.length}…`);
       }
@@ -142,7 +217,10 @@
     return { count: res?.count ?? entries.length, withUrl };
   }
 
-  if (/^\/settings\/applications/.test(location.pathname)) {
+  if (
+    /^\/settings\/applications/.test(location.pathname) ||
+    /^\/settings\/apps\/authorizations/.test(location.pathname)
+  ) {
     // Ensure UI helper is loaded (content_scripts array injects ui.js first)
     const tryMount = () => {
       if (window.__siwwUi) {

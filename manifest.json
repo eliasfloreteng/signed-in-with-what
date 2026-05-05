@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Signed in with What?",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Shows if the current page has been authorized via Sign in with GitHub or Google.",
   "browser_specific_settings": {
     "gecko": {
@@ -15,6 +15,7 @@
   "permissions": ["storage", "tabs", "activeTab"],
   "host_permissions": [
     "https://github.com/settings/applications*",
+    "https://github.com/settings/apps/authorizations*",
     "https://myaccount.google.com/connections*"
   ],
   "background": {
@@ -35,7 +36,10 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://github.com/settings/applications*"],
+      "matches": [
+        "https://github.com/settings/applications*",
+        "https://github.com/settings/apps/authorizations*"
+      ],
       "js": ["scrapers/ui.js", "scrapers/github.js"],
       "run_at": "document_idle"
     },
