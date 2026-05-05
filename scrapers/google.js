@@ -58,7 +58,9 @@
   // [<id-string>, [<name>, null, <icon?>, ...]]
   function findAppTuples(data) {
     const out = [];
-    const ID_RE = /^AVBx9[A-Za-z0-9_-]{20,}/;
+    // Google currently uses IDs like "AVBx9..." and "AcBx0..." on the
+    // connections pages. Keep this broad enough to tolerate format changes.
+    const ID_RE = /^A[A-Za-z0-9_-]{20,}$/;
     function walk(node) {
       if (!Array.isArray(node)) return;
       // Check if this node looks like a list of app tuples
